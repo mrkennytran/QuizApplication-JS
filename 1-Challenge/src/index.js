@@ -6,11 +6,12 @@
 
 // Advanced: Incorporate an api that fetches a random question with answers 
 
+let retakeQuiz = false; 
 let questionaireList = [
   {
     "question" : "What does GIS stand for?",
     "answers": [
-      "Graphic Informational System", "Geospatial Informations System", "Geometric Insight Signals", "Geographic Iniformational System"           
+      "Graphic Informational System", "Geospatial Informations System", "Geometric Insight Signals", "Geographic Informational System"           
     ],
     "correctAnswer": "Geospatial Informations System"
   },
@@ -36,7 +37,7 @@ let questionaireList = [
   }
 ];
 
-let shuffleQuestions = (questions) => { // selects a question from the array and displays it along with the possible answers
+let shuffleAndDrawQuestion = (questions) => { // selects a question from the array and displays it along with the possible answers
   let currentIndex = questions.length;
   // While there remain elements to shuffle... 
 
@@ -53,85 +54,111 @@ let shuffleQuestions = (questions) => { // selects a question from the array and
 };
 
 let displayRandomQuestion = (question, retryCounter, numOption) => { // Print results onto web browser page 
-  return prompt(`${question.question}\n- Enter number to answer. (attempts: ${3 - retryCounter})` + '\n\n' + question.answers.map(ans => {return `${numOption += 1}. ${ans}`}).toString().replaceAll(',', '\n')).trim();
+  answer = prompt(`${question.question}\n- Enter number to answer. (attempts: ${3 - retryCounter})` + '\n\n' + question.answers.map(ans => {return `${numOption += 1}. ${ans}`}).toString().replaceAll(',', '\n'));
+  if(answer !== null ){
+    answer = answer.trim();
+  }
+  return answer;
 }
 
 
 let runQuiz = (questions) => {
+  let questionRef = []; 
+  let totalQuestions = 0;
+  let correctCount = 0;
+  let incorrectCount = 0;
   let answer = ''; 
-  let retakeQuiz = false;   
+  let root = document.getElementById('myList');
+  let ol = document.createElement('ol');
+  let ul = document.createElement('ul');
+  root.appendChild(ol);
+
+  questions.forEach(element => {
+    totalQuestions++    
+  });
+  
   do {    
     let completedQuestion = false;
     let retryCounter = 0; 
-    let question = shuffleQuestions(questions);           
+    let question = shuffleAndDrawQuestion(questions);
+
+    // Render question 
+    if(retryCounter === 0) {
+      li = document.createElement('li');
+      li.appendChild(document.createTextNode(`${question.question}`));
+      ol.appendChild(li);
+    } 
+        
     do {      
       let parsedValue = 0; 
-      let isValidNumericAns; 
-      do {
+      let isValidNumericAns;   
+      do { // Checks if user input is a valid  
         let numOption = 0; 
         answer = displayRandomQuestion(question, retryCounter, numOption);
         parsedValue = Number(answer);
         retryCounter++;
         isValidNumericAns = parsedValue >= 1 && parsedValue <= 4;
-      } while (typeof parsedValue !== NaN);
+      } while (!isValidNumericAns && retryCounter < 3);
 
-      let validAnswer = (answer !== null); //  && (.includes(answer.toLowerCase()))
-      if(validAnswer && question.correctAnswer.toLowerCase() === answer.toLowerCase()){ // Correct answer
-        let list = document.getElementById("question");  
-        let entry = document.createElement('li');
-        entry.appendChild(document.createTextNode(`${question.question}\nYour Answer: ${answer}\nResult: Correct`));
-        list.appendChild(entry);
+      // Checks if user's answer is correct
+      answer = question.answers[answer - 1];
+      if(answer === undefined) answer = '';
+      if(retryCounter < 3 && question.correctAnswer.toLowerCase() !== answer.toLowerCase()) { // Incorrect answer AND have retries left        
+        let ul = document.createElement('ul');
+        ol.appendChild(ul);
+        l2 = document.createElement('li');
+        l2.appendChild(document.createTextNode(`Your Answer: ${answer} - INCORRECT`));
+        ul.appendChild(l2);
+      }
+      else if(question.correctAnswer.toLowerCase() === answer.toLowerCase()){ // Correct answer
+        let ul = document.createElement('ul');
+        correctCount++;
+        ol.appendChild(ul);
+        l2 = document.createElement('li');
+        l2.appendChild(document.createTextNode(`Answer: ${answer} - CORRECT`));
+        ul.appendChild(l2);
         completedQuestion = true;    
       }
-      else if(retryCounter < 2){ // Retry 
-        document.getElementById("question").innerHTML = `Incorrect. Try again.`;
-        document.getElementById("your-answer").innerHTML = `Your answer: ${answer}`;
-        document.getElementById("correct-answer").innerHTML = ``;    
-        retryCounter++;  
-      }
-      else { // 
-        document.getElementById("question").innerHTML = question.question;
-        document.getElementById("your-answer").innerHTML = `Your answer: ${answer}`;
-        document.getElementById("correct-answer").innerHTML = `Correct answer: ${question.correctAnswer}`; 
-        retryCounter = 0;
+      else { // Incorrect answer AND all out of retries
+        let ul = document.createElement('ul');
+        incorrectCount++;    
+        ol.appendChild(ul);
+        l2 = document.createElement('li');
+        l2.appendChild(document.createTextNode(`Your Answer: ${answer} - INCORRECT`));
+        ul.appendChild(l2);
+
+        let l3 = document.createElement('li');
+        l3.appendChild(document.createTextNode(`Correct Answer: ${question.correctAnswer}`));
+        l2.appendChild(l3);
         completedQuestion = true; 
       }
-     // else {
-     //   document.getElementById("question").innerHTML = question.question;
-     //   document.getElementById("your-answer").innerHTML = `Your answer: ${answer}`;
-     //   document.getElementById("correct-answer").innerHTML = `Invalid entry. Try again.`;
-     // }
     } while (!completedQuestion);
-
+    retryCounter = 0;
     completedQuestion = false; 
-    // Removes answer question
-    questions.shift();
 
-    /*
-    counter++; 
-    if(counter === questions.length - 1){ // Quiz has ended and opts if user wants to retake
-      do {
-        let userEntry = prompt("Would you like to retake this quiz? Enter 'Yes' or 'No': ");
-        switch (userEntry.toLowerCase()) {
-          case "yes":
-            retakeQuiz = yes;   
-            break;
-          case "no":
-            retakeQuiz = false; 
-          default:
-            document.getElementById("question").innerHTML = "Invalid entry. Try Again.";
-            document.getElementById("answer").innerHTML = "";
-            break;
-        }
-      } while (true);
-      
-    }    */
+    // Removes answer question
+    questionRef.push(questions[0]);
+    questions.shift();
   } while(questions.length !== 0);    // counter !== questions.length - 1)
-  console.log(done);
+  if(totalQuestions === undefined) totalQuestions = 0; 
+  let grade = Math.floor((correctCount / totalQuestions) * 100);
+  li = document.createElement('li');
+  li.appendChild(document.createTextNode(`Quiz Grade: ${grade}%`));
+  ol.appendChild(li);
+  questions = questionRef;
+  return questions;
 }
 
-
-runQuiz(questionaireList); // Start quiz 
+do {
+  questionaireList = runQuiz(questionaireList); // Start quiz 
+  let response;
+  do {
+    response = prompt('Would you like to retake this quiz? (Answer y or n)');
+  } while(response.toLowerCase() !== 'y' && response.toLowerCase() !== 'n');
+  if(response === 'y'){
+    retakeQuiz = true; 
+  }  
+} while(retakeQuiz);
 
 
 
